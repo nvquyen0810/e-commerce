@@ -1,14 +1,16 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Controller, Get, Res } from '@nestjs/common';
+import { Response } from 'express';
+import { join } from 'path';
 
 @Controller('admin')
 export class AdminController {
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
-  getAdminDashboard() {
-    return { message: 'Welcome to Admin Dashboard' };
+  serveAdmin(@Res() res: Response) {
+    return res.sendFile(join(__dirname, '..', '..', 'public', 'admin', 'build', 'index.html'));
+  }
+
+  @Get('*')
+  serveAdminRoutes(@Res() res: Response) {
+    return res.sendFile(join(__dirname, '..', '..', 'public', 'admin', 'build', 'index.html'));
   }
 } 

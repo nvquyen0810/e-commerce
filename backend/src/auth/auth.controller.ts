@@ -1,28 +1,38 @@
-import { Controller, Post, Body, UnauthorizedException, UseGuards, Get, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Request } from 'express';
 
-@Controller('auth')
+class RegisterDto {
+  name: string;
+  email: string;
+  password: string;
+}
+
+class LoginDto {
+  email: string;
+  password: string;
+}
+
+@Controller('api/auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto) {
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     return this.authService.login(user);
   }
 
-  @Post('refresh')
-  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto.refreshToken);
-  }
-
   @UseGuards(JwtAuthGuard)
-  @Post('logout')
-  async logout(@Req() req: Request) {
-    return this.authService.logout(req.user['sub']);
+  @Get('logout')
+  async logout(@Request() req: any) {
+    return this.authService.logout(req.user.sub);
   }
 } 

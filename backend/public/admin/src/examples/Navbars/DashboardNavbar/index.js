@@ -16,7 +16,7 @@ Coded by www.creative-tim.com
 import { useState, useEffect } from "react";
 
 // react-router components
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
@@ -58,9 +58,15 @@ function DashboardNavbar({ absolute, light, isMini }) {
   const [controller, dispatch] = useMaterialUIController();
   const { miniSidenav, transparentNavbar, fixedNavbar, openConfigurator, darkMode } = controller;
   const [openMenu, setOpenMenu] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
   const route = useLocation().pathname.split("/").slice(1);
 
   useEffect(() => {
+    // Kiểm tra trạng thái đăng nhập
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
+
     // Setting the navbar type
     if (fixedNavbar) {
       setNavbarType("sticky");
@@ -90,6 +96,28 @@ function DashboardNavbar({ absolute, light, isMini }) {
   const handleConfiguratorOpen = () => setOpenConfigurator(dispatch, !openConfigurator);
   const handleOpenMenu = (event) => setOpenMenu(event.currentTarget);
   const handleCloseMenu = () => setOpenMenu(false);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:3000/api/auth/logout", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Đăng xuất thất bại");
+      }
+
+      localStorage.removeItem("token");
+      setIsAuthenticated(false);
+      navigate("/authentication/sign-in");
+    } catch (error) {
+      console.error("Lỗi khi đăng xuất:", error);
+    }
+  };
 
   // Render the notifications menu
   const renderMenu = () => (
@@ -139,11 +167,26 @@ function DashboardNavbar({ absolute, light, isMini }) {
               <MDInput label="Search here" />
             </MDBox>
             <MDBox color={light ? "white" : "inherit"}>
-              <Link to="/authentication/sign-in/basic">
-                <IconButton sx={navbarIconButton} size="small" disableRipple>
+              {isAuthenticated ? (
+                <IconButton 
+                  sx={navbarIconButton} 
+                  size="small" 
+                  disableRipple
+                  onClick={handleLogout}
+                >
+                  <Icon sx={iconsStyle}>logout</Icon>
+                </IconButton>
+              ) : (
+                <IconButton
+                  component={Link}
+                  to="/authentication/sign-in"
+                  sx={navbarIconButton}
+                  size="small"
+                  disableRipple
+                >
                   <Icon sx={iconsStyle}>account_circle</Icon>
                 </IconButton>
-              </Link>
+              )}
               <IconButton
                 size="small"
                 disableRipple
